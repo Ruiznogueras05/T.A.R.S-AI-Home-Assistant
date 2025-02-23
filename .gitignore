@@ -169,3 +169,30 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Raspberry Pi-specific files
+*.swp
+*.bak
+*.log
+*.pid
+
+# Home Assistant & MQTT Logs
+home-assistant.log
+mqtt_logs/
+
+# API Keys & Sensitive Configs (VERY IMPORTANT)
+.env
+config/api_keys.json
+config/secrets.yaml
+
+# OS-Specific Files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Large Media Files (if applicable)
+*.wav
+*.mp3
+*.mp4
+*.avi
+
