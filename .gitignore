@@ -196,3 +196,7 @@ Thumbs.db
 *.mp4
 *.avi
 
+# Ignore Porcupine Wake-Word Models
+Project_Software/wake_word/*.ppn
+
+
