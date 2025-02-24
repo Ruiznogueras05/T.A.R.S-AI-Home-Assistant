@@ -1,40 +1,67 @@
 import openai
 import pyaudio
 import wave
+import webrtcvad
+import struct
 
-# Set your OpenAI API Key
-API_KEY = "YOUR_OPENAI_API_KEY"
+# OpenAI API Key
+API_KEY = "OPENAI API KEY goes here"
 
-# Audio recording settings
+# Audio settings
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100  # Whisper API works best with 16kHz or 44.1kHz audio
+RATE = 16000  # Lower rate works better with voice detection
 CHUNK = 1024
-RECORD_SECONDS = 5  # Adjust as needed
 WAVE_OUTPUT_FILENAME = "recorded_audio.wav"
 
+# Initialize WebRTC Voice Activity Detection (VAD)
+vad = webrtcvad.Vad()
+vad.set_mode(2)  # Sensitivity: 0 (least aggressive) to 3 (most aggressive)
+
+def is_speech(frame, sample_rate):
+    """Checks if a frame contains speech using WebRTC VAD."""
+    return vad.is_speech(frame, sample_rate)
+
 def record_audio():
-    """Records audio and saves it to a .wav file."""
+    """Records audio until silence is detected using WebRTC VAD."""
     audio = pyaudio.PyAudio()
-    
     stream = audio.open(format=FORMAT, channels=CHANNELS,
                         rate=RATE, input=True,
                         frames_per_buffer=CHUNK)
-    
-    print("Recording...")
+
+    print("Listening for speech...")
     frames = []
-    
-    for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-        data = stream.read(CHUNK)
+    silence_threshold = 40  # Lower value stops recording faster
+    silence_count = 0
+
+    # Ensure frame size is 30ms
+    frame_duration = 30  # in ms
+    frame_size = int(RATE * (frame_duration / 1000))  # Number of samples per frame
+
+    # Adjust VAD Sensitivity (0 = least aggressive, 3 = most aggressive)
+    vad.set_mode(1)
+
+    while True:
+        data = stream.read(frame_size, exception_on_overflow=False)
         frames.append(data)
-    
-    print("Recording complete.")
+
+        # Check if speech is detected
+        if vad.is_speech(data, RATE):
+            silence_count = 0  # Reset silence counter
+        else:
+            silence_count += 1  # Increase silence counter
+
+        # Stop recording if silence persists for a while
+        if silence_count > silence_threshold:
+            break
+
+    print("Silence detected. Stopping recording.")
 
     stream.stop_stream()
     stream.close()
     audio.terminate()
 
-    # Save the recorded audio to a file
+    # Save the recorded audio
     with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(audio.get_sample_size(FORMAT))
@@ -43,19 +70,20 @@ def record_audio():
 
     return WAVE_OUTPUT_FILENAME
 
+
 def transcribe_audio(filename):
     """Sends the recorded audio file to Whisper API for transcription."""
+    client = openai.OpenAI(api_key=API_KEY)
     with open(filename, "rb") as audio_file:
-        transcript = openai.Audio.transcribe("whisper-1", audio_file, api_key=API_KEY)
-    return transcript["text"]
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+    return transcript.text
 
 if __name__ == "__main__":
-    # Step 1: Record audio after wake-word detection
+    # Start recording and transcribing
     audio_file = record_audio()
-
-    # Step 2: Send it to Whisper for transcription
     print("Transcribing...")
     text = transcribe_audio(audio_file)
-
-    # Step 3: Print the transcribed text
     print(f"Transcription: {text}")
