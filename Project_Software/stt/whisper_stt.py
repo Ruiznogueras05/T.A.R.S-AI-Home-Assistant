@@ -3,16 +3,18 @@ import pyaudio
 import wave
 import webrtcvad
 import struct
+import os
 
 # OpenAI API Key
-API_KEY = "OPENAI API KEY goes here"
+API_KEY = "OPEN API KEY GOES HERE"
 
 # Audio settings
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000  # Lower rate works better with voice detection
 CHUNK = 1024
-WAVE_OUTPUT_FILENAME = "recorded_audio.wav"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # Get the script's directory
+WAVE_OUTPUT_FILENAME = os.path.join(SCRIPT_DIR, "recorded_audio.wav")
 
 # Initialize WebRTC Voice Activity Detection (VAD)
 vad = webrtcvad.Vad()
@@ -72,13 +74,19 @@ def record_audio():
 
 
 def transcribe_audio(filename):
-    """Sends the recorded audio file to Whisper API for transcription."""
+    """Sends the recorded audio file to Whisper API for transcription and deletes it after."""
     client = openai.OpenAI(api_key=API_KEY)
+
     with open(filename, "rb") as audio_file:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_file
         )
+
+    # Delete the audio file after successful transcription
+    os.remove(filename)
+    print(f"Deleted {filename} after transcription.")
+
     return transcript.text
 
 if __name__ == "__main__":
