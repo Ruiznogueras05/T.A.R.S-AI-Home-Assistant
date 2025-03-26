@@ -5,6 +5,8 @@ import webrtcvad
 import struct
 import os
 
+# This script is meant to test out the speech to text feature using OpenAI's Whisper API and WebRTC VAD to record a person talking until silence is detected. 
+
 # OpenAI API Key
 API_KEY = "OPEN API KEY GOES HERE"
 

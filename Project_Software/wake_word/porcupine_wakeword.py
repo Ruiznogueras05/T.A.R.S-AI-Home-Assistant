@@ -2,6 +2,8 @@ import pvporcupine
 import pyaudio
 import struct
 
+# This script is meant to test Picovoice Porcupine's wake word detection  with "Hey TARS" as the wake word
+
 # Replace "YOUR_ACCESS_KEY" with your actual Picovoice access key
 ACCESS_KEY = "YOUR_ACCESS_KEY"
 
